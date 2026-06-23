@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  image         String?
+  points        Int          @default(0)
+  city          String?
+  createdAt     DateTime     @default(now())
+  cleanups      Cleanup[]
+  redemptions   Redemption[]
+  drives        Drive[]
+}
+
+model Cleanup {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  location    String
+  beforeImage String
+  afterImage  String
+  points      Int      @default(50)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Reward {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  points      Int
+  brand       String
+  icon        String?
+  redemptions Redemption[]
+}
+
+model Redemption {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  rewardId  String
+  reward    Reward   @relation(fields: [rewardId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Community {
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  organizer     String
+  email         String
+  phone         String?
+  website       String?
+  location      String
+  date          DateTime
+  image         String?
+  members       Int             @default(0)
+  status        CommunityStatus @default(PENDING)
+  createdAt     DateTime        @default(now())
+  drives        Drive[]
+}
+
+enum CommunityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Drive {
+  id            String    @id @default(cuid())
+  communityId   String
+  community     Community @relation(fields: [communityId], references: [id])
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  pointsDonated Boolean   @default(false)
+  points        Int       @default(0)
+  createdAt     DateTime  @default(now())
+}
