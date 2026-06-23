@@ -1,5 +1,5 @@
+import type { DefaultSession, NextAuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
-import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
@@ -9,7 +9,8 @@ declare module "next-auth" {
   }
 }
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
@@ -20,9 +21,9 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub as string;
+        session.user.id = token.sub ?? "";
       }
       return session;
     },

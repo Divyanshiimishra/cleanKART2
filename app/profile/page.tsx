@@ -85,7 +85,7 @@ export default function ProfilePage() {
           <h1 className="text-[#27500A] text-xl font-semibold">Profile</h1>
         </div>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="flex items-center gap-1.5 text-red-400 text-sm border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition-all"
         >
           <i className="ti ti-logout text-sm"></i>

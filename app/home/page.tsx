@@ -58,7 +58,7 @@ export default function HomePage() {
           <span className="text-[#27500A] font-semibold text-lg">CleanKart</span>
         </div>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="flex items-center gap-1.5 text-[#888780] text-sm border border-[#e0ead8] px-3 py-1.5 rounded-full hover:bg-white transition-all"
         >
           <i className="ti ti-logout text-sm"></i>
