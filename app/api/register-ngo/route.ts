@@ -10,11 +10,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, description, organizer, email, phone, website, location, date } =
-      await req.json();
+    const body: unknown = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
 
-    if (!name || !description || !organizer || !email || !location || !date) {
+    const { name, description, organizer, email, phone, website, location, date } = body as {
+      name?: unknown;
+      description?: unknown;
+      organizer?: unknown;
+      email?: unknown;
+      phone?: unknown;
+      website?: unknown;
+      location?: unknown;
+      date?: unknown;
+    };
+
+    if (
+      typeof name !== "string" ||
+      typeof description !== "string" ||
+      typeof organizer !== "string" ||
+      typeof email !== "string" ||
+      typeof location !== "string" ||
+      typeof date !== "string"
+    ) {
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
+    }
+
+    const eventDate = new Date(date);
+    if (Number.isNaN(eventDate.getTime())) {
+      return NextResponse.json({ error: "Invalid event date" }, { status: 400 });
     }
 
     const community = await prisma.community.create({
@@ -23,11 +48,11 @@ export async function POST(req: NextRequest) {
         description,
         organizer,
         email,
-        phone: phone || null,
-        website: website || null,
+        phone: typeof phone === "string" && phone.trim() ? phone.trim() : null,
+        website: typeof website === "string" && website.trim() ? website.trim() : null,
         location,
-        date: new Date(date),
-        status: "APPROVED",
+        date: eventDate,
+        status: "PENDING",
         members: 0,
       },
     });

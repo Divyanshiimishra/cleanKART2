@@ -3,19 +3,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+class RouteError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const email = session.user.email;
 
     const rewards = await prisma.reward.findMany({
       orderBy: { points: "asc" },
     });
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email },
       include: {
         redemptions: {
           include: { reward: true },
@@ -41,37 +51,54 @@ export async function POST(req: Request) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const email = session.user.email;
 
-    const { rewardId } = await req.json();
+    const body: unknown = await req.json().catch(() => null);
+    const rewardId =
+      body && typeof body === "object" && "rewardId" in body
+        ? (body as { rewardId?: unknown }).rewardId
+        : undefined;
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    const reward = await prisma.reward.findUnique({
-      where: { id: rewardId },
-    });
-
-    if (!user || !reward) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (typeof rewardId !== "string" || rewardId.trim().length === 0) {
+      return NextResponse.json({ error: "Invalid reward" }, { status: 400 });
     }
 
-    if (user.points < reward.points) {
-      return NextResponse.json({ error: "Insufficient points" }, { status: 400 });
-    }
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const reward = await tx.reward.findUnique({ where: { id: rewardId } });
 
-    // Redeem reward
-    await prisma.redemption.create({
-      data: {
-        userId: user.id,
-        rewardId: reward.id,
-      },
-    });
+      if (!reward) throw new RouteError("Reward not found", 404);
+      if (!Number.isSafeInteger(reward.points) || reward.points <= 0) {
+        throw new RouteError("Reward is unavailable", 409);
+      }
 
-    // Deduct points
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: { points: { decrement: reward.points } },
+      const debit = await tx.user.updateMany({
+        where: {
+          email,
+          points: { gte: reward.points },
+        },
+        data: { points: { decrement: reward.points } },
+      });
+
+      if (debit.count === 0) {
+        const user = await tx.user.findUnique({
+          where: { email },
+          select: { id: true },
+        });
+
+        if (!user) throw new RouteError("User not found", 404);
+        throw new RouteError("Insufficient points", 400);
+      }
+
+      const user = await tx.user.findUniqueOrThrow({
+        where: { email },
+        select: { id: true, points: true },
+      });
+
+      await tx.redemption.create({
+        data: { userId: user.id, rewardId: reward.id },
+      });
+
+      return user;
     });
 
     return NextResponse.json({
@@ -79,6 +106,9 @@ export async function POST(req: Request) {
       remainingPoints: updatedUser.points,
     });
   } catch (error) {
+    if (error instanceof RouteError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Redeem error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

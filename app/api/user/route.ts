@@ -17,6 +17,7 @@ export async function GET() {
           orderBy: { createdAt: "desc" },
           take: 5,
         },
+        _count: { select: { cleanups: true } },
       },
     });
 
@@ -30,6 +31,7 @@ export async function GET() {
         },
         include: {
           cleanups: true,
+          _count: { select: { cleanups: true } },
         },
       });
     }
@@ -40,7 +42,7 @@ export async function GET() {
       email: user.email,
       image: user.image,
       points: user.points,
-      cleanups: user.cleanups.length,
+      cleanups: user._count.cleanups,
       recentCleanups: user.cleanups,
     });
 

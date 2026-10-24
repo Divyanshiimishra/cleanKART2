@@ -1,8 +1,31 @@
-import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getRequiredServerEnv } from "@/lib/env";
 
-export async function GET() {
+export const runtime = "nodejs";
+
+function hasValidSeedToken(request: NextRequest, expectedToken: string) {
+  const providedToken = request.headers.get("x-cleankart-seed-token");
+
+  if (!providedToken) return false;
+
+  const expected = Buffer.from(expectedToken);
+  const provided = Buffer.from(providedToken);
+
+  return (
+    expected.length === provided.length && timingSafeEqual(expected, provided)
+  );
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const seedToken = getRequiredServerEnv("CLEANKART_SEED_TOKEN");
+
+    if (!hasValidSeedToken(request, seedToken)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Seed Rewards
     const rewardsCount = await prisma.reward.count();
     if (rewardsCount === 0) {
@@ -121,6 +144,12 @@ export async function GET() {
     return NextResponse.json({ message: "Database seeded successfully!" });
   } catch (error) {
     console.error("Seed error:", error);
-    return NextResponse.json({ error: "Seed failed" }, { status: 500 });
+    const isMissingConfiguration =
+      error instanceof Error && error.message.startsWith("Missing required");
+
+    return NextResponse.json(
+      { error: isMissingConfiguration ? "Seed endpoint is not configured" : "Seed failed" },
+      { status: isMissingConfiguration ? 503 : 500 }
+    );
   }
 }

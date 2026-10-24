@@ -82,4 +82,6 @@ model Drive {
   pointsDonated Boolean   @default(false)
   points        Int       @default(0)
   createdAt     DateTime  @default(now())
+
+  @@unique([communityId, userId])
 }
