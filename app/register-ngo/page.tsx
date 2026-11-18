@@ -49,12 +49,13 @@ export default function RegisterNGOPage() {
       });
       const data = await res.json();
       if (data.success) {
+        toast.success("Registration submitted successfully!");
         setSuccess(true);
       } else {
-        toast.error("Something went wrong. Please try again!");
+        toast.error(data.error || "Something went wrong. Please try again!");
       }
     } catch {
-      toast.error("Something went wrong. Please try again!");
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
