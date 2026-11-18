@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -34,10 +35,15 @@ export default function LoginPage() {
 
         <div className="rounded-[1.75rem] border border-[#dce7d4] bg-white p-6 shadow-[0_20px_60px_rgba(49,94,18,0.1)] sm:p-8">
           <div className="text-center">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#315e12] text-white">
-              <Leaf aria-hidden="true" className="size-7" />
-            </span>
-            <h1 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-[#244b0d]">
+            <Image
+              src="/logo.png"
+              alt="CleanKart"
+              width={160}
+              height={71}
+              className="mx-auto h-12 w-auto object-contain"
+              priority
+            />
+            <h1 className="mt-4 text-2xl font-bold tracking-[-0.03em] text-[#244b0d]">
               Welcome to CleanKart
             </h1>
             <p className="mt-2 text-sm leading-6 text-[#667160]">

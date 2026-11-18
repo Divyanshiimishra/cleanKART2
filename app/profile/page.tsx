@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -111,7 +112,13 @@ export default function ProfilePage() {
         <h2 className="text-[#27500A] text-xl font-semibold">{session?.user?.name}</h2>
         <p className="text-[#888780] text-sm mt-1">{session?.user?.email}</p>
         <div className="mt-3 inline-flex items-center gap-1.5 bg-[#EAF3DE] text-[#3B6D11] text-xs font-medium px-3 py-1 rounded-full">
-          <i className="ti ti-leaf text-xs"></i>
+          <Image
+            src="/logo.png"
+            alt="CleanKart"
+            width={18}
+            height={18}
+            className="h-3.5 w-auto object-contain"
+          />
           CleanKart Member
         </div>
       </div>
@@ -213,9 +220,16 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <p className="text-[#B4B2A9] text-xs text-center mt-6 mb-4">
-        CleanKart — Clean India, Earn Rewards
-      </p>
+      <div className="flex items-center justify-center gap-2 mt-6 mb-4">
+        <Image
+          src="/logo.png"
+          alt="CleanKart"
+          width={80}
+          height={36}
+          className="h-4 w-auto object-contain opacity-60"
+        />
+        <span className="text-[#B4B2A9] text-xs">— Clean India, Earn Rewards</span>
+      </div>
     </div>
   );
 }

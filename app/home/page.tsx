@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -39,8 +40,14 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-[#f8faf6] flex items-center justify-center">
         <div className="text-center">
-          <i className="ti ti-leaf text-[#639922] text-4xl"></i>
-          <p className="text-[#639922] mt-2 text-sm">Loading...</p>
+          <Image
+            src="/logo.png"
+            alt="CleanKart"
+            width={120}
+            height={53}
+            className="h-10 w-auto object-contain mx-auto animate-pulse"
+          />
+          <p className="text-[#639922] mt-3 text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -52,10 +59,14 @@ export default function HomePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-[#639922] rounded-full flex items-center justify-center">
-            <i className="ti ti-leaf text-white text-sm"></i>
-          </div>
-          <span className="text-[#27500A] font-semibold text-lg">CleanKart</span>
+          <Image
+            src="/logo.png"
+            alt="CleanKart"
+            width={120}
+            height={53}
+            className="h-8 w-auto object-contain"
+            priority
+          />
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}

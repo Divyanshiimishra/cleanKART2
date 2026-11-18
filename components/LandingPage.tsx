@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -69,12 +70,14 @@ export default function LandingPage() {
             aria-label="CleanKart home"
             className="flex cursor-pointer items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#639922]"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#315e12] text-white shadow-sm sm:size-10">
-              <Leaf aria-hidden="true" className="size-5" />
-            </span>
-            <span className="text-lg font-bold tracking-[-0.02em] sm:text-xl">
-              CleanKart
-            </span>
+            <Image
+              src="/logo.png"
+              alt="CleanKart"
+              width={140}
+              height={62}
+              className="h-9 sm:h-10 w-auto object-contain"
+              priority
+            />
           </Link>
 
           <nav aria-label="Landing page" className="flex items-center gap-2 sm:gap-5">
@@ -310,8 +313,13 @@ export default function LandingPage() {
       <footer className="border-t border-[#dfe9d8] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-7 text-center sm:flex-row sm:px-6 sm:text-left lg:px-8">
           <div className="flex items-center gap-2 font-bold text-[#244b0d]">
-            <Leaf aria-hidden="true" className="size-4" />
-            CleanKart
+            <Image
+              src="/logo.png"
+              alt="CleanKart"
+              width={100}
+              height={44}
+              className="h-6 w-auto object-contain"
+            />
           </div>
           <p className="text-xs text-[#667160] sm:text-sm">
             Clean your city. Earn rewards. Grow community impact.
