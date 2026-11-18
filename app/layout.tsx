@@ -48,6 +48,7 @@ export default function RootLayout({
         <Providers>
           <AppShell>{children}</AppShell>
           <Navbar />
+          <Toaster />
         </Providers>
       </body>
     </html>

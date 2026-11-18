@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function RegisterNGOPage() {
   const { status } = useSession();
@@ -33,7 +34,7 @@ export default function RegisterNGOPage() {
 
   const handleSubmit = async () => {
     if (!form.name || !form.description || !form.organizer || !form.email || !form.location || !form.date || !form.time) {
-      alert("Please fill all required fields!");
+      toast.warning("Please fill all required fields!");
       return;
     }
     setLoading(true);
@@ -50,10 +51,10 @@ export default function RegisterNGOPage() {
       if (data.success) {
         setSuccess(true);
       } else {
-        alert("Something went wrong. Please try again!");
+        toast.error("Something went wrong. Please try again!");
       }
     } catch {
-      alert("Something went wrong. Please try again!");
+      toast.error("Something went wrong. Please try again!");
     } finally {
       setLoading(false);
     }
