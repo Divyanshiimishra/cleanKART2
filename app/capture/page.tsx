@@ -31,51 +31,77 @@ export default function CapturePage() {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [result, setResult] = useState<CleanupResult | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputStep2Ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
+  // Keep video element connected to media stream whenever it's mounted
+  const setVideoRef = (video: HTMLVideoElement | null) => {
+    videoRef.current = video;
+    if (video && streamRef.current) {
+      if (video.srcObject !== streamRef.current) {
+        video.srcObject = streamRef.current;
+      }
+      video.play().catch((err) => {
+        console.warn("video.play() failed on mount:", err);
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch((err) => {
+        console.warn("video.play() failed in effect:", err);
+      });
+    }
+  }, [cameraActive]);
+
   const startCamera = async () => {
     setCameraError("");
 
-    const attachStream = (stream: MediaStream): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        streamRef.current = stream;
-        const video = videoRef.current;
-        if (!video) {
-          reject(new Error("Video element not found"));
-          return;
-        }
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-          video
-            .play()
-            .then(() => resolve())
-            .catch(reject);
-        };
-      });
-    };
+    if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera is not supported on this browser. You can upload an image instead.");
+      return;
+    }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      await attachStream(stream);
-      setCameraActive(true);
-    } catch {
+      let stream: MediaStream | null = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
         });
-        await attachStream(stream);
-        setCameraActive(true);
       } catch {
-        setCameraError("Camera access denied. Please allow camera permission in browser settings.");
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
+      streamRef.current = stream;
+      setCameraActive(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch((e) => console.warn("Video play error:", e));
+      }
+    } catch (err: unknown) {
+      console.error("Camera access error:", err);
+      const error = err as { name?: string; message?: string };
+      if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
+        setCameraError("Camera access denied. Please click the camera icon in your browser address bar and allow permission.");
+      } else if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError") {
+        setCameraError("No camera found on this device. You can upload a photo instead.");
+      } else {
+        setCameraError("Unable to open camera. You can upload a photo directly instead.");
       }
     }
   };
@@ -88,7 +114,7 @@ export default function CapturePage() {
 
   const capturePhoto = (type: "before" | "after") => {
     const video = videoRef.current;
-    if (!video || video.readyState < video.HAVE_CURRENT_DATA) return;
+    if (!video) return;
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
@@ -105,6 +131,25 @@ export default function CapturePage() {
       setAfterImage(dataUrl);
       setStep(3);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      stopCamera();
+      if (type === "before") {
+        setBeforeImage(dataUrl);
+        setStep(2);
+      } else {
+        setAfterImage(dataUrl);
+        setStep(3);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleSubmit = async () => {
@@ -268,7 +313,7 @@ export default function CapturePage() {
 
           {cameraActive ? (
             <div className="relative rounded-2xl overflow-hidden mb-4 bg-black">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-72 object-cover" />
+              <video ref={setVideoRef} autoPlay playsInline muted className="w-full h-72 object-cover" />
               <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-6">
                 <button
                   onClick={stopCamera}
@@ -300,18 +345,39 @@ export default function CapturePage() {
             <div className="bg-white border-2 border-dashed border-[#c0dda0] rounded-2xl p-12 text-center mb-4">
               <i className="ti ti-camera text-[#c0dda0] text-5xl"></i>
               <p className="text-[#639922] font-medium mt-3">Camera Preview</p>
-              <p className="text-[#888780] text-sm mt-1">Click below to open camera</p>
+              <p className="text-[#888780] text-sm mt-1">Open camera or upload photo from device</p>
             </div>
           )}
 
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleFileUpload(e, "before")}
+          />
+
           {!cameraActive && (
-            <button
-              onClick={beforeImage ? () => setStep(2) : startCamera}
-              className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
-            >
-              <i className={`ti ${beforeImage ? "ti-arrow-right" : "ti-camera"} text-sm`}></i>
-              {beforeImage ? "Continue" : "Open Camera"}
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={beforeImage ? () => setStep(2) : startCamera}
+                className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
+              >
+                <i className={`ti ${beforeImage ? "ti-arrow-right" : "ti-camera"} text-sm`}></i>
+                {beforeImage ? "Continue" : "Open Camera"}
+              </button>
+
+              {!beforeImage && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border border-[#c0dda0] text-[#27500A] bg-white hover:bg-[#f4f9ef] font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  <i className="ti ti-upload text-sm"></i>
+                  Upload Photo from Device
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -342,7 +408,7 @@ export default function CapturePage() {
               </div>
               {cameraActive ? (
                 <div className="relative rounded-xl overflow-hidden h-36 bg-black">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  <video ref={setVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                 </div>
               ) : (
                 <div className="bg-white border-2 border-dashed border-[#c0dda0] rounded-xl h-36 flex flex-col items-center justify-center">
@@ -352,6 +418,14 @@ export default function CapturePage() {
               )}
             </div>
           </div>
+
+          <input
+            type="file"
+            ref={fileInputStep2Ref}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleFileUpload(e, "after")}
+          />
 
           {cameraActive ? (
             <div className="flex gap-3">
@@ -369,13 +443,24 @@ export default function CapturePage() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={startCamera}
-              className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
-            >
-              <i className="ti ti-camera text-sm"></i>
-              Open Camera
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={startCamera}
+                className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
+              >
+                <i className="ti ti-camera text-sm"></i>
+                Open Camera
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputStep2Ref.current?.click()}
+                className="w-full border border-[#c0dda0] text-[#27500A] bg-white hover:bg-[#f4f9ef] font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2 text-sm"
+              >
+                <i className="ti ti-upload text-sm"></i>
+                Upload Photo from Device
+              </button>
+            </div>
           )}
         </div>
       )}

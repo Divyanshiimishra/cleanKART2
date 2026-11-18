@@ -67,9 +67,9 @@ export default function RegisterNGOPage() {
         <div className="w-20 h-20 bg-[#EAF3DE] rounded-full flex items-center justify-center mx-auto mb-4">
           <i className="ti ti-circle-check text-[#3B6D11] text-5xl"></i>
         </div>
-        <h2 className="text-[#27500A] text-2xl font-semibold mb-2">Registration Submitted!</h2>
+        <h2 className="text-[#27500A] text-2xl font-semibold mb-2">Organization Registered!</h2>
         <p className="text-[#888780] text-sm mb-6">
-          Your community drive has been submitted. It will appear on the community page shortly!
+          Your community drive has been published! It is now live on the community page.
         </p>
         <div className="bg-white border border-[#e0ead8] rounded-2xl p-5 mb-6 w-full max-w-xs text-left">
           <p className="text-[#888780] text-xs font-medium uppercase tracking-widest mb-3">What happens next?</p>
@@ -220,13 +220,13 @@ export default function RegisterNGOPage() {
           ) : (
             <>
               <i className="ti ti-send text-sm"></i>
-              Submit for Review
+              Register Organization
             </>
           )}
         </button>
 
         <p className="text-[#B4B2A9] text-xs text-center">
-          Your drive will appear on the community page after submission
+          Your drive will appear immediately on the community page
         </p>
       </div>
     </div>

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         website: typeof website === "string" && website.trim() ? website.trim() : null,
         location,
         date: eventDate,
-        status: "PENDING",
+        status: "APPROVED",
         members: 0,
       },
     });
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       communityId: community.id,
-      message: "Registration submitted for review!",
+      message: "Organization registered successfully!",
     });
   } catch (error) {
     console.error("NGO Registration error:", error);
