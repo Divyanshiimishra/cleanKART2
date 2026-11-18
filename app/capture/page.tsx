@@ -33,8 +33,6 @@ export default function CapturePage() {
   const [result, setResult] = useState<CleanupResult | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileInputStep2Ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -68,7 +66,7 @@ export default function CapturePage() {
     setCameraError("");
 
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setCameraError("Camera is not supported on this browser. You can upload an image instead.");
+      setCameraError("Camera is not supported on this browser or device.");
       return;
     }
 
@@ -99,9 +97,9 @@ export default function CapturePage() {
       if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
         setCameraError("Camera access denied. Please click the camera icon in your browser address bar and allow permission.");
       } else if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError") {
-        setCameraError("No camera found on this device. You can upload a photo instead.");
+        setCameraError("No camera found on this device.");
       } else {
-        setCameraError("Unable to open camera. You can upload a photo directly instead.");
+        setCameraError("Unable to open camera. Please check your browser camera permissions.");
       }
     }
   };
@@ -131,25 +129,6 @@ export default function CapturePage() {
       setAfterImage(dataUrl);
       setStep(3);
     }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      stopCamera();
-      if (type === "before") {
-        setBeforeImage(dataUrl);
-        setStep(2);
-      } else {
-        setAfterImage(dataUrl);
-        setStep(3);
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
   };
 
   const handleSubmit = async () => {
@@ -345,39 +324,18 @@ export default function CapturePage() {
             <div className="bg-white border-2 border-dashed border-[#c0dda0] rounded-2xl p-12 text-center mb-4">
               <i className="ti ti-camera text-[#c0dda0] text-5xl"></i>
               <p className="text-[#639922] font-medium mt-3">Camera Preview</p>
-              <p className="text-[#888780] text-sm mt-1">Open camera or upload photo from device</p>
+              <p className="text-[#888780] text-sm mt-1">Click below to open camera</p>
             </div>
           )}
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => handleFileUpload(e, "before")}
-          />
-
           {!cameraActive && (
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={beforeImage ? () => setStep(2) : startCamera}
-                className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
-              >
-                <i className={`ti ${beforeImage ? "ti-arrow-right" : "ti-camera"} text-sm`}></i>
-                {beforeImage ? "Continue" : "Open Camera"}
-              </button>
-
-              {!beforeImage && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border border-[#c0dda0] text-[#27500A] bg-white hover:bg-[#f4f9ef] font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2 text-sm"
-                >
-                  <i className="ti ti-upload text-sm"></i>
-                  Upload Photo from Device
-                </button>
-              )}
-            </div>
+            <button
+              onClick={beforeImage ? () => setStep(2) : startCamera}
+              className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
+            >
+              <i className={`ti ${beforeImage ? "ti-arrow-right" : "ti-camera"} text-sm`}></i>
+              {beforeImage ? "Continue" : "Open Camera"}
+            </button>
           )}
         </div>
       )}
@@ -419,14 +377,6 @@ export default function CapturePage() {
             </div>
           </div>
 
-          <input
-            type="file"
-            ref={fileInputStep2Ref}
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => handleFileUpload(e, "after")}
-          />
-
           {cameraActive ? (
             <div className="flex gap-3">
               <button
@@ -443,24 +393,13 @@ export default function CapturePage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={startCamera}
-                className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
-              >
-                <i className="ti ti-camera text-sm"></i>
-                Open Camera
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fileInputStep2Ref.current?.click()}
-                className="w-full border border-[#c0dda0] text-[#27500A] bg-white hover:bg-[#f4f9ef] font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2 text-sm"
-              >
-                <i className="ti ti-upload text-sm"></i>
-                Upload Photo from Device
-              </button>
-            </div>
+            <button
+              onClick={startCamera}
+              className="w-full bg-[#639922] hover:bg-[#3B6D11] text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
+            >
+              <i className="ti ti-camera text-sm"></i>
+              Open Camera
+            </button>
           )}
         </div>
       )}
