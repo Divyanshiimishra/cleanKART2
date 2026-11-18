@@ -8,13 +8,16 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
+const connectionString = getRequiredServerEnv("DATABASE_URL");
+
 const pool =
   globalForPrisma.pool ??
   new Pool({
-    connectionString: getRequiredServerEnv("DATABASE_URL"),
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: true }
+    connectionString,
+    ssl: connectionString.includes("sslmode=")
+      ? undefined                          // let the connection string control SSL
+      : process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }    // Supabase / serverless compatible
         : undefined,
   });
 

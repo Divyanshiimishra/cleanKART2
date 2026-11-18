@@ -40,28 +40,39 @@ export default function CapturePage() {
 
   const startCamera = async () => {
     setCameraError("");
+
+    const attachStream = (stream: MediaStream): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) {
+          reject(new Error("Video element not found"));
+          return;
+        }
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video
+            .play()
+            .then(() => resolve())
+            .catch(reject);
+        };
+      });
+    };
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } },
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      await attachStream(stream);
       setCameraActive(true);
     } catch {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
         });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
+        await attachStream(stream);
         setCameraActive(true);
       } catch {
         setCameraError("Camera access denied. Please allow camera permission in browser settings.");
@@ -77,11 +88,14 @@ export default function CapturePage() {
 
   const capturePhoto = (type: "before" | "after") => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || video.readyState < video.HAVE_CURRENT_DATA) return;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
     const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
     stopCamera();
     if (type === "before") {
